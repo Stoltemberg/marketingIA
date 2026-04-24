@@ -63,6 +63,8 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
       const metaCampaign = await callMetaApi('campaigns', {
         name,
         objective: objective || 'OUTCOME_SALES',
+        buying_type: 'AUCTION',
+        is_adset_budget_sharing_enabled: false,
         status: 'PAUSED', // Rule: create everything as PAUSED
         special_ad_categories: []
       }, 'campaign');
