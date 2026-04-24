@@ -89,6 +89,7 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
         name,
         campaign_id: campaign.meta_campaign_id,
         daily_budget: daily_budget * 100, // cents
+        is_adset_budget_sharing_enabled: false,
         billing_event: 'IMPRESSIONS',
         optimization_goal: 'REACH',
         bid_amount: 100,
