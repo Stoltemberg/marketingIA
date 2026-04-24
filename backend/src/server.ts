@@ -13,10 +13,39 @@ const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+const defaultAllowedPatterns = [
+  /^http:\/\/localhost:\d+$/,
+  /^https:\/\/marketingia(?:-[a-z0-9]+)?(?:-[a-z0-9]+)?\.onrender\.com$/,
+];
 
 // Register plugins
 server.register(cors, {
-  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    const normalizedOrigin = origin.trim().replace(/\/$/, '');
+    const matchesExplicitOrigin = allowedOrigins.some(
+      (allowedOrigin) => allowedOrigin.replace(/\/$/, '') === normalizedOrigin
+    );
+    const matchesDefaultPattern = defaultAllowedPatterns.some((pattern) =>
+      pattern.test(normalizedOrigin)
+    );
+
+    server.log.info(
+      {
+        requestOrigin: normalizedOrigin,
+        allowedOrigins,
+        matchesExplicitOrigin,
+        matchesDefaultPattern,
+      },
+      'Evaluating CORS origin'
+    );
+
+    callback(null, matchesExplicitOrigin || matchesDefaultPattern);
+  },
   credentials: true,
 });
 
