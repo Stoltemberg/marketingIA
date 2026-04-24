@@ -98,17 +98,36 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     try {
       const { data: campaign } = await fastify.supabase
         .from('campaigns')
-        .select('*')
+        .select(`
+          *,
+          project:projects(*)
+        `)
         .eq('id', campaign_id)
         .single();
 
       if (!campaign) throw new Error('Campaign not found');
+
+      const country = campaign.project?.country?.trim()?.toUpperCase();
+      const targeting: Record<string, unknown> = {
+        geo_locations: {
+          countries: country ? [country] : ['BR']
+        }
+      };
+
+      if (Array.isArray(target_audience?.interests) && target_audience.interests.length > 0) {
+        targeting.flexible_spec = [
+          {
+            interests: target_audience.interests.map((interest: string) => ({ name: interest }))
+          }
+        ];
+      }
 
       const metaAdSet = await callMetaApi('adsets', {
         name,
         campaign_id: campaign.meta_campaign_id,
         daily_budget: daily_budget * 100, // cents
         is_adset_budget_sharing_enabled: false,
+        targeting,
         billing_event: 'IMPRESSIONS',
         optimization_goal: 'REACH',
         bid_amount: 100,
