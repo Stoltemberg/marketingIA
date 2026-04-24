@@ -26,7 +26,8 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     if (!META_ACCESS_TOKEN || META_ACCESS_TOKEN === 'YOUR_META_ACCESS_TOKEN') {
       return { id: `mock_${type}_${Date.now()}` };
     }
-    const url = `https://graph.facebook.com/${META_API_VERSION}/${META_AD_ACCOUNT_ID}/${path}`;
+    const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+    const url = `https://graph.facebook.com/${META_API_VERSION}/${normalizedPath}`;
     const response = await axios.post(url, {
       ...payload,
       access_token: META_ACCESS_TOKEN
@@ -252,18 +253,23 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
 
       if (!adset) throw new Error('AdSet not found');
 
-      const metaAd = await callMetaApi('ads', {
+      const creative = await callMetaApi(`${META_AD_ACCOUNT_ID}/adcreatives`, {
+        name: `${name} Creative`,
+        object_story_spec: {
+          page_id: META_PAGE_ID,
+          link_data: {
+            message: copy,
+            link: creative_url,
+            name: headline
+          }
+        }
+      }, 'adcreative');
+
+      const metaAd = await callMetaApi(`${META_AD_ACCOUNT_ID}/ads`, {
         name,
         adset_id: adset.meta_adset_id,
         creative: {
-          object_story_spec: {
-            page_id: META_PAGE_ID,
-            link_data: {
-              message: copy,
-              link: creative_url,
-              name: headline
-            }
-          }
+          creative_id: creative.id
         },
         status: 'PAUSED'
       }, 'ad');
