@@ -4,6 +4,11 @@ import { useEffect, useState, use } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Sparkles, Megaphone } from 'lucide-react';
 
+const brlFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
 type Project = {
   id: string;
   name: string;
@@ -191,7 +196,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-gray-500">Daily Budget</dt>
-              <dd className="mt-1 text-sm text-gray-900">${project.daily_budget}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{brlFormatter.format(project.daily_budget)}</dd>
             </div>
           </dl>
         </div>

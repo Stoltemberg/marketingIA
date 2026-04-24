@@ -2,6 +2,11 @@ import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import { Plus, Folder } from 'lucide-react';
 
+const brlFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+
 export default async function ProjectsPage() {
   const supabase = await createClient();
   
@@ -52,7 +57,7 @@ export default async function ProjectsPage() {
                       </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                         <p>
-                          Budget: ${project.daily_budget}/day
+                          Budget: {brlFormatter.format(project.daily_budget)}/dia
                         </p>
                       </div>
                     </div>

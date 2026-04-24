@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
+const META_ACCOUNT_CURRENCY = 'BRL';
+
 export default function NewProjectPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -74,8 +76,9 @@ export default function NewProjectPage() {
               <input type="text" required value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black" placeholder="US, BR, etc." />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Daily Budget (USD)</label>
-              <input type="number" required value={formData.daily_budget} onChange={e => setFormData({...formData, daily_budget: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black" />
+              <label className="block text-sm font-medium text-gray-700">Daily Budget ({META_ACCOUNT_CURRENCY})</label>
+              <input type="number" min="5.02" step="0.01" required value={formData.daily_budget} onChange={e => setFormData({...formData, daily_budget: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black" />
+              <p className="mt-1 text-xs text-gray-500">Meta account minimum: R$ 5,02 por dia.</p>
             </div>
           </div>
 
