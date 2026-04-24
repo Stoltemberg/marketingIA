@@ -45,6 +45,17 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     return 'Unknown error';
   };
 
+  const logMetaError = (action: string, err: unknown, context: Record<string, unknown> = {}) => {
+    fastify.log.error(
+      {
+        action,
+        context,
+        details: getErrorDetails(err),
+      },
+      `Meta API ${action} failed`
+    );
+  };
+
   fastify.post('/create-campaign', { preValidation: [authenticate] }, async (request: any, reply) => {
     const { project_id, name, objective } = request.body;
 
@@ -69,6 +80,12 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
       if (error) throw error;
       return data;
     } catch (err: unknown) {
+      logMetaError('create-campaign', err, {
+        project_id,
+        name,
+        objective: objective || 'OUTCOME_SALES',
+        ad_account_id: META_AD_ACCOUNT_ID,
+      });
       return reply.status(500).send({ error: 'Failed to create campaign', details: getErrorDetails(err) });
     }
   });
@@ -111,6 +128,12 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
       if (error) throw error;
       return data;
     } catch (err: unknown) {
+      logMetaError('create-adset', err, {
+        campaign_id,
+        name,
+        daily_budget,
+        ad_account_id: META_AD_ACCOUNT_ID,
+      });
       return reply.status(500).send({ error: 'Failed to create adset', details: getErrorDetails(err) });
     }
   });
@@ -163,6 +186,12 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
       if (error) throw error;
       return data;
     } catch (err: unknown) {
+      logMetaError('create-ad', err, {
+        ad_set_id,
+        name,
+        page_id: META_PAGE_ID,
+        ad_account_id: META_AD_ACCOUNT_ID,
+      });
       return reply.status(500).send({ error: 'Failed to create ad', details: getErrorDetails(err) });
     }
   });
