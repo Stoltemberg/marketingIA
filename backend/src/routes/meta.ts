@@ -34,6 +34,22 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     return response.data;
   };
 
+  const getMeta = async (path: string, params: Record<string, unknown> = {}) => {
+    if (!META_ACCESS_TOKEN || META_ACCESS_TOKEN === 'YOUR_META_ACCESS_TOKEN') {
+      throw new Error('META_ACCESS_TOKEN is required');
+    }
+
+    const url = `https://graph.facebook.com/${META_API_VERSION}/${path}`;
+    const response = await axios.get(url, {
+      params: {
+        ...params,
+        access_token: META_ACCESS_TOKEN,
+      },
+    });
+
+    return response.data;
+  };
+
   const getErrorDetails = (err: unknown) => {
     if (axios.isAxiosError(err)) {
       return err.response?.data || err.message;
@@ -90,6 +106,61 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
         ad_account_id: META_AD_ACCOUNT_ID,
       });
       return reply.status(500).send({ error: 'Failed to create campaign', details: getErrorDetails(err) });
+    }
+  });
+
+  fastify.get('/diagnostics', { preValidation: [authenticate] }, async (_request, reply) => {
+    try {
+      const [me, adAccounts, pages, configuredAdAccount, configuredPage] = await Promise.allSettled([
+        getMeta('me', { fields: 'id,name' }),
+        getMeta('me/adaccounts', { fields: 'id,account_id,name,account_status,currency' }),
+        getMeta('me/accounts', { fields: 'id,name,category,access_token' }),
+        META_AD_ACCOUNT_ID
+          ? getMeta(META_AD_ACCOUNT_ID, { fields: 'id,account_id,name,account_status,currency' })
+          : Promise.resolve(null),
+        META_PAGE_ID
+          ? getMeta(META_PAGE_ID, { fields: 'id,name,link,category' })
+          : Promise.resolve(null),
+      ]);
+
+      return reply.send({
+        configured: {
+          ad_account_id: META_AD_ACCOUNT_ID || null,
+          page_id: META_PAGE_ID || null,
+        },
+        me: me.status === 'fulfilled' ? me.value : { error: getErrorDetails(me.reason) },
+        visible_ad_accounts:
+          adAccounts.status === 'fulfilled' ? adAccounts.value : { error: getErrorDetails(adAccounts.reason) },
+        visible_pages:
+          pages.status === 'fulfilled'
+            ? {
+                data: Array.isArray(pages.value?.data)
+                  ? pages.value.data.map((page: Record<string, unknown>) => ({
+                      id: page.id,
+                      name: page.name,
+                      category: page.category,
+                    }))
+                  : pages.value,
+              }
+            : { error: getErrorDetails(pages.reason) },
+        configured_ad_account_lookup:
+          configuredAdAccount.status === 'fulfilled'
+            ? configuredAdAccount.value
+            : { error: getErrorDetails(configuredAdAccount.reason) },
+        configured_page_lookup:
+          configuredPage.status === 'fulfilled'
+            ? configuredPage.value
+            : { error: getErrorDetails(configuredPage.reason) },
+      });
+    } catch (err: unknown) {
+      logMetaError('diagnostics', err, {
+        ad_account_id: META_AD_ACCOUNT_ID,
+        page_id: META_PAGE_ID,
+      });
+      return reply.status(500).send({
+        error: 'Failed to run Meta diagnostics',
+        details: getErrorDetails(err),
+      });
     }
   });
 
