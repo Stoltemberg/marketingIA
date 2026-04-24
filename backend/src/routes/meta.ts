@@ -78,7 +78,7 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     const { project_id, name, objective } = request.body;
 
     try {
-      const metaCampaign = await callMetaApi('campaigns', {
+      const metaCampaign = await callMetaApi(`${META_AD_ACCOUNT_ID}/campaigns`, {
         name,
         objective: objective || 'OUTCOME_SALES',
         buying_type: 'AUCTION',
@@ -200,7 +200,7 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
         ];
       }
 
-      const metaAdSet = await callMetaApi('adsets', {
+      const metaAdSet = await callMetaApi(`${META_AD_ACCOUNT_ID}/adsets`, {
         name,
         campaign_id: campaign.meta_campaign_id,
         daily_budget: Math.round(normalizedBudget * 100), // cents
