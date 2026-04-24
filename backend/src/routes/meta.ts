@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
   const META_API_VERSION = 'v19.0';
+  const META_MIN_DAILY_BUDGET = 5.02;
   const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
   const META_AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
   const META_PAGE_ID = process.env.META_PAGE_ID;
@@ -96,6 +97,11 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     const { campaign_id, name, daily_budget, target_audience } = request.body;
 
     try {
+      const normalizedBudget = Number(daily_budget);
+      if (!Number.isFinite(normalizedBudget) || normalizedBudget < META_MIN_DAILY_BUDGET) {
+        throw new Error(`O orçamento minimo para esta conta Meta e R$ ${META_MIN_DAILY_BUDGET.toFixed(2)} por dia.`);
+      }
+
       const { data: campaign } = await fastify.supabase
         .from('campaigns')
         .select(`
@@ -125,7 +131,7 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
       const metaAdSet = await callMetaApi('adsets', {
         name,
         campaign_id: campaign.meta_campaign_id,
-        daily_budget: daily_budget * 100, // cents
+        daily_budget: Math.round(normalizedBudget * 100), // cents
         is_adset_budget_sharing_enabled: false,
         targeting,
         billing_event: 'IMPRESSIONS',
