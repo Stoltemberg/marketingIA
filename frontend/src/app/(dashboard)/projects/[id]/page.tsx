@@ -55,7 +55,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
           .eq('project_id', resolvedParams.id)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (!cancelled && recData) {
           setRecommendations(recData.recommendation as RecommendationPayload);
