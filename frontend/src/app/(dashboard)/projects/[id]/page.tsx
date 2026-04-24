@@ -113,34 +113,50 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`
+      };
+      const parseJsonResponse = async (response: Response) => {
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          const message =
+            payload?.details ||
+            payload?.error ||
+            `Request failed with status ${response.status}`;
+          throw new Error(message);
+        }
+        return payload;
+      };
       
       // Create Campaign
       const campRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/meta/create-campaign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        headers,
         body: JSON.stringify({ project_id: resolvedParams.id, name: `${project.name} - AI Gen`, objective: 'OUTCOME_SALES' })
       });
-      const campData = await campRes.json();
+      const campData = await parseJsonResponse(campRes);
 
       // Create AdSet
       const adsetRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/meta/create-adset`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        headers,
         body: JSON.stringify({ campaign_id: campData.id, name: 'Broad Audience', daily_budget: project.daily_budget, target_audience: recommendations.audiences[0] })
       });
-      const adsetData = await adsetRes.json();
+      const adsetData = await parseJsonResponse(adsetRes);
 
       // Create Ad
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/meta/create-ad`, {
+      const adRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/meta/create-ad`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        headers,
         body: JSON.stringify({ ad_set_id: adsetData.id, name: 'AI Ad 1', creative_url: project.url, copy: recommendations.copies[0], headline: recommendations.headlines[0] })
       });
+      await parseJsonResponse(adRes);
 
       alert('Campaign successfully published to Meta in PAUSED status!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
-      alert('Error publishing to Meta');
+      alert(error instanceof Error ? error.message : 'Error publishing to Meta');
     }
   };
 

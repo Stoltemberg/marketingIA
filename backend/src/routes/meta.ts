@@ -33,6 +33,18 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     return response.data;
   };
 
+  const getErrorDetails = (err: unknown) => {
+    if (axios.isAxiosError(err)) {
+      return err.response?.data || err.message;
+    }
+
+    if (err instanceof Error) {
+      return err.message;
+    }
+
+    return 'Unknown error';
+  };
+
   fastify.post('/create-campaign', { preValidation: [authenticate] }, async (request: any, reply) => {
     const { project_id, name, objective } = request.body;
 
@@ -56,8 +68,8 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
 
       if (error) throw error;
       return data;
-    } catch (err: any) {
-      return reply.status(500).send({ error: 'Failed to create campaign', details: err.message });
+    } catch (err: unknown) {
+      return reply.status(500).send({ error: 'Failed to create campaign', details: getErrorDetails(err) });
     }
   });
 
@@ -97,8 +109,8 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
 
       if (error) throw error;
       return data;
-    } catch (err: any) {
-      return reply.status(500).send({ error: 'Failed to create adset', details: err.message });
+    } catch (err: unknown) {
+      return reply.status(500).send({ error: 'Failed to create adset', details: getErrorDetails(err) });
     }
   });
 
@@ -149,8 +161,8 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
 
       if (error) throw error;
       return data;
-    } catch (err: any) {
-      return reply.status(500).send({ error: 'Failed to create ad', details: err.message });
+    } catch (err: unknown) {
+      return reply.status(500).send({ error: 'Failed to create ad', details: getErrorDetails(err) });
     }
   });
 };
