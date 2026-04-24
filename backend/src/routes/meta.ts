@@ -5,6 +5,7 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
   const META_API_VERSION = 'v19.0';
   const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
   const META_AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
+  const META_PAGE_ID = process.env.META_PAGE_ID;
 
   const authenticate = async (request: any, reply: any) => {
     const authHeader = request.headers.authorization;
@@ -105,6 +106,10 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
     const { ad_set_id, name, creative_url, copy, headline } = request.body;
 
     try {
+      if (!META_PAGE_ID || META_PAGE_ID === 'YOUR_META_PAGE_ID') {
+        throw new Error('META_PAGE_ID is required to create ads');
+      }
+
        const { data: adset } = await fastify.supabase
         .from('ad_sets')
         .select('*')
@@ -116,7 +121,16 @@ const metaRoutes: FastifyPluginAsync = async (fastify, opts) => {
       const metaAd = await callMetaApi('ads', {
         name,
         adset_id: adset.meta_adset_id,
-        creative: { object_story_spec: { page_id: 'mock_page_id', link_data: { message: copy, link: creative_url, name: headline } } },
+        creative: {
+          object_story_spec: {
+            page_id: META_PAGE_ID,
+            link_data: {
+              message: copy,
+              link: creative_url,
+              name: headline
+            }
+          }
+        },
         status: 'PAUSED'
       }, 'ad');
 
