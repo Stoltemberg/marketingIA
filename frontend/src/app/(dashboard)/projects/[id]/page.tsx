@@ -120,10 +120,13 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
       const parseJsonResponse = async (response: Response) => {
         const payload = await response.json().catch(() => null);
         if (!response.ok) {
+          const detail = payload?.details ?? payload?.error;
           const message =
-            payload?.details ||
-            payload?.error ||
-            `Request failed with status ${response.status}`;
+            typeof detail === 'string'
+              ? detail
+              : detail
+                ? JSON.stringify(detail)
+                : `Request failed with status ${response.status}`;
           throw new Error(message);
         }
         return payload;
